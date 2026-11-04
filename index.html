@@ -15,8 +15,9 @@
             <h1 class="text-xl font-bold">CBT Politeknik Penerbangan Makassar</h1>
             <p class="text-xs text-blue-200">Ujian Sistem Manajemen Keselamatan (SMS)</p>
         </div>
-        <div id="timer-box" class="bg-blue-800 px-4 py-2 rounded-lg font-mono text-lg font-semibold border border-blue-700 hidden">
-            ⏱️ <span id="time-left">60:00</span>
+        <div id="timer-box" class="bg-blue-800 px-4 py-2 rounded-lg font-mono text-lg font-semibold border border-blue-700 hidden flex items-center space-x-3">
+            <div>⏱️ Total: <span id="time-left">25:00</span></div>
+            <div class="border-l border-blue-600 pl-3 text-amber-300">⏳ Soal Ini: <span id="question-time">30</span>s</div>
         </div>
     </header>
 
@@ -39,6 +40,44 @@
                     Mulai Ujian Sekarang
                 </button>
             </form>
+            <!-- Tombol Khusus Akses Dosen -->
+            <div class="mt-6 pt-4 border-t text-center">
+                <button onclick="bukaPanelAdmin()" class="text-xs text-slate-500 hover:text-blue-600 underline">
+                    🔒 Panel Rekap Nilai Dosen
+                </button>
+            </div>
+        </div>
+
+        <!-- Halaman Panel Admin / Rekap Dosen (Hidden by default) -->
+        <div id="admin-screen" class="hidden bg-white p-6 rounded-xl shadow-lg max-w-2xl mx-auto mt-6">
+            <div class="flex justify-between items-center border-b pb-4 mb-4">
+                <h3 class="text-xl font-bold text-blue-900">Rekapitulasi Hasil Ujian Taruna/i</h3>
+                <button onclick="tutupPanelAdmin()" class="text-slate-400 hover:text-slate-600 text-sm font-semibold">✕ Tutup</button>
+            </div>
+            <div class="overflow-x-auto mb-6">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-slate-100 border-b text-slate-700">
+                            <th class="p-3">No</th>
+                            <th class="p-3">Nama Peserta</th>
+                            <th class="p-3">NIM</th>
+                            <th class="p-3 text-center">Benar</th>
+                            <th class="p-3 text-center">Nilai (Skala 100)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabel-rekap-body">
+                        <!-- Data rekap masuk disini -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="flex justify-between items-center">
+                <button onclick="hapusDataRekap()" class="bg-rose-100 text-rose-700 hover:bg-rose-200 px-4 py-2 rounded-lg text-xs font-semibold transition">
+                    Hapus Data Rekap
+                </button>
+                <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition shadow">
+                    🖨️ Cetak / Simpan Laporan (PDF)
+                </button>
+            </div>
         </div>
 
         <!-- Halaman Pengerjaan Soal (Hidden by default) -->
@@ -64,8 +103,8 @@
                     <button onclick="soalSebelumnya()" id="btn-prev" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-medium transition">
                         &larr; Sebelumnya
                     </button>
-                    <button onclick="tandaiRagu()" id="btn-doubt" class="bg-amber-100 hover:bg-amber-200 text-amber-800 px-4 py-2 rounded-lg font-medium transition text-sm">
-                        Ragu-ragu
+                    <button onclick="lewatiSoal()" id="btn-skip" class="bg-amber-100 hover:bg-amber-200 text-amber-800 px-4 py-2 rounded-lg font-medium transition text-sm">
+                        Lewati Dulu
                     </button>
                     <button onclick="soalBerikutnya()" id="btn-next" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">
                         Selanjutnya &rarr;
@@ -90,10 +129,10 @@
 
         </div>
 
-        <!-- Halaman Hasil / Nilai (Hidden by default) -->
+        <!-- Halaman Hasil / Nilai (Langsung Muncul) -->
         <div id="result-screen" class="hidden bg-white p-8 rounded-xl shadow-lg max-w-lg mx-auto text-center">
             <h2 class="text-2xl font-bold text-slate-800 mb-2">Ujian Telah Selesai</h2>
-            <p class="text-slate-600 mb-6">Terima kasih telah menyelesaikan Ujian Sistem Manajemen Keselamatan (SMS).</p>
+            <p class="text-slate-600 mb-6">Hasil ujian Anda berhasil direkam dan dinilai secara otomatis.</p>
             
             <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
                 <p class="text-sm text-blue-600 font-semibold uppercase tracking-wider mb-1">Nilai Akhir Anda</p>
@@ -124,10 +163,12 @@
         import smsBankSoal from './sms_bank_soal.js';
 
         let currentQuestion = 0;
-        let userAnswers = {}; // Menyimpan jawaban user { indexSoal: pilihanIndex }
-        let dudaStatus = {};  // Menyimpan status ragu-ragu { indexSoal: boolean }
-        let timerInterval;
-        let timeLeft = 3600; // 60 menit dalam detik
+        let userAnswers = {}; 
+        let skippedStatus = {}; 
+        let totalTimerInterval;
+        let questionTimerInterval;
+        let totalTimeLeft = 1500; 
+        let questionTimeLeft = 30; 
 
         window.mulaiUjian = function(event) {
             event.preventDefault();
@@ -142,7 +183,7 @@
 
             initNavigasiGrid();
             loadSoal(currentQuestion);
-            startTimer();
+            startTotalTimer();
         }
 
         function initNavigasiGrid() {
@@ -165,6 +206,7 @@
         }
 
         function loadSoal(index) {
+            currentQuestion = index;
             const soal = smsBankSoal[index];
             document.getElementById('question-number').innerText = `Soal ke-${index + 1} dari ${smsBankSoal.length}`;
             document.getElementById('question-text').innerText = soal.question;
@@ -183,36 +225,40 @@
                 optionsContainer.appendChild(div);
             });
 
-            // Atur tombol prev/next
             document.getElementById('btn-prev').style.display = index === 0 ? 'none' : 'block';
             document.getElementById('btn-next').innerText = index === smsBankSoal.length - 1 ? 'Selesai' : 'Selanjutnya →';
             
             updateNavigasiGridStyles();
+            resetQuestionTimer();
         }
 
         window.pilihJawaban = function(soalIndex, optIndex) {
             userAnswers[soalIndex] = optIndex;
+            skippedStatus[soalIndex] = false; 
             updateNavigasiGridStyles();
         }
 
-        window.tandaiRagu = function() {
-            dudaStatus[currentQuestion] = !dudaStatus[currentQuestion];
-            const btnDoubt = document.getElementById('btn-doubt');
-            if(dudaStatus[currentQuestion]) {
-                btnDoubt.className = "bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition text-sm shadow";
-                btnDoubt.innerText = "Ragu-ragu (Ditandai)";
-            } else {
-                btnDoubt.className = "bg-amber-100 hover:bg-amber-200 text-amber-800 px-4 py-2 rounded-lg font-medium transition text-sm";
-                btnDoubt.innerText = "Ragu-ragu";
-            }
+        window.lewatiSoal = function() {
+            skippedStatus[currentQuestion] = true;
             updateNavigasiGridStyles();
+            
+            if(currentQuestion < smsBankSoal.length - 1) {
+                currentQuestion++;
+                loadSoal(currentQuestion);
+            } else {
+                let nextUnanswered = smsBankSoal.findIndex((_, idx) => userAnswers[idx] === undefined);
+                if(nextUnanswered !== -1) {
+                    loadSoal(nextUnanswered);
+                } else {
+                    konfirmasiSelesai();
+                }
+            }
         }
 
         window.soalBerikutnya = function() {
             if(currentQuestion < smsBankSoal.length - 1) {
                 currentQuestion++;
                 loadSoal(currentQuestion);
-                resetDoubtButton();
             } else {
                 konfirmasiSelesai();
             }
@@ -222,18 +268,6 @@
             if(currentQuestion > 0) {
                 currentQuestion--;
                 loadSoal(currentQuestion);
-                resetDoubtButton();
-            }
-        }
-
-        function resetDoubtButton() {
-            const btnDoubt = document.getElementById('btn-doubt');
-            if(dudaStatus[currentQuestion]) {
-                btnDoubt.className = "bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition text-sm shadow";
-                btnDoubt.innerText = "Ragu-ragu (Ditandai)";
-            } else {
-                btnDoubt.className = "bg-amber-100 hover:bg-amber-200 text-amber-800 px-4 py-2 rounded-lg font-medium transition text-sm";
-                btnDoubt.innerText = "Ragu-ragu";
             }
         }
 
@@ -242,32 +276,62 @@
                 const btn = document.getElementById(`nav-btn-${index}`);
                 if(!btn) return;
 
-                // Reset class dasar
                 btn.className = "w-9 h-9 rounded-lg font-medium text-sm flex items-center justify-center transition border ";
 
                 if(index === currentQuestion) {
                     btn.className += "border-blue-600 bg-blue-600 text-white shadow-sm ring-2 ring-blue-300";
-                } else if(dudaStatus[index]) {
-                    btn.className += "border-amber-400 bg-amber-400 text-white";
+                } else if(skippedStatus[index]) {
+                    btn.className += "border-amber-400 bg-amber-400 text-white"; 
                 } else if(userAnswers[index] !== undefined) {
-                    btn.className += "border-emerald-500 bg-emerald-500 text-white";
+                    btn.className += "border-emerald-500 bg-emerald-500 text-white"; 
                 } else {
                     btn.className += "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200";
                 }
             });
         }
 
-        function startTimer() {
-            timerInterval = setInterval(() => {
-                if(timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    alert("Waktu ujian telah habis!");
+        function resetQuestionTimer() {
+            clearInterval(questionTimerInterval);
+            questionTimeLeft = 30; 
+            document.getElementById('question-time').innerText = questionTimeLeft;
+
+            questionTimerInterval = setInterval(() => {
+                questionTimeLeft--;
+                document.getElementById('question-time').innerText = questionTimeLeft;
+
+                if(questionTimeLeft <= 0) {
+                    clearInterval(questionTimerInterval);
+                    if(userAnswers[currentQuestion] === undefined) {
+                        skippedStatus[currentQuestion] = true;
+                    }
+                    
+                    if(currentQuestion < smsBankSoal.length - 1) {
+                        currentQuestion++;
+                        loadSoal(currentQuestion);
+                    } else {
+                        let nextUnanswered = smsBankSoal.findIndex((_, idx) => userAnswers[idx] === undefined);
+                        if(nextUnanswered !== -1) {
+                            loadSoal(nextUnanswered);
+                        } else {
+                            hitungDanTampilkanHasil();
+                        }
+                    }
+                }
+            }, 1000);
+        }
+
+        function startTotalTimer() {
+            totalTimerInterval = setInterval(() => {
+                if(totalTimeLeft <= 0) {
+                    clearInterval(totalTimerInterval);
+                    clearInterval(questionTimerInterval);
+                    alert("Waktu total ujian telah habis!");
                     hitungDanTampilkanHasil();
                     return;
                 }
-                timeLeft--;
-                const minutes = Math.floor(timeLeft / 60);
-                const seconds = timeLeft % 60;
+                totalTimeLeft--;
+                const minutes = Math.floor(totalTimeLeft / 60);
+                const seconds = totalTimeLeft % 60;
                 document.getElementById('time-left').innerText = 
                     `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }, 1000);
@@ -275,12 +339,16 @@
 
         window.konfirmasiSelesai = function() {
             if(confirm("Apakah Anda yakin ingin mengakhiri ujian dan mengirimkan jawaban?")) {
-                clearInterval(timerInterval);
+                clearInterval(totalTimerInterval);
+                clearInterval(questionTimerInterval);
                 hitungDanTampilkanHasil();
             }
         }
 
         function hitungDanTampilkanHasil() {
+            clearInterval(totalTimerInterval);
+            clearInterval(questionTimerInterval);
+            
             let totalBenar = 0;
             smsBankSoal.forEach((soal, index) => {
                 if(userAnswers[index] === soal.answer) {
@@ -288,17 +356,81 @@
                 }
             });
 
-            // Perhitungan nilai dengan bobot 2 poin per soal (Total max = 100)
             const nilaiAkhir = totalBenar * 2;
+            const nama = document.getElementById('nama-peserta').value;
+            const nim = document.getElementById('nim-peserta').value;
+
+            // Simpan hasil ke LocalStorage browser supaya terekam untuk laporan dosen
+            simpanHasilKeStorage(nama, nim, totalBenar, nilaiAkhir);
 
             document.getElementById('quiz-screen').classList.add('hidden');
             document.getElementById('timer-box').classList.add('hidden');
             document.getElementById('result-screen').classList.remove('hidden');
 
             document.getElementById('score-display').innerText = nilaiAkhir;
-            document.getElementById('res-nama').innerText = document.getElementById('nama-peserta').value;
-            document.getElementById('res-nim').innerText = document.getElementById('nim-peserta').value;
+            document.getElementById('res-nama').innerText = nama;
+            document.getElementById('res-nim').innerText = nim;
             document.getElementById('res-benar').innerText = totalBenar;
+        }
+
+        function simpanHasilKeStorage(nama, nim, benar, nilai) {
+            let rekap = JSON.parse(localStorage.getItem('rekap_cbt_sms') || '[]');
+            // Cek jika NIM sudah ada, update nilainya; jika belum, tambah baru
+            let existingIndex = rekap.findIndex(item => item.nim === nim);
+            if(existingIndex !== -1) {
+                rekap[existingIndex] = { nama, nim, benar, nilai, tanggal: new Date().toLocaleString() };
+            } else {
+                rekap.push({ nama, nim, benar, nilai, tanggal: new Date().toLocaleString() });
+            }
+            localStorage.setItem('rekap_cbt_sms', JSON.stringify(rekap));
+        }
+
+        // Fungsi Panel Dosen (Admin)
+        window.bukaPanelAdmin = function() {
+            const password = prompt("Masukkan Password Dosen:");
+            if(password === "poltekbang123") { // Password default, bisa diubah sesuai keinginan Ibu
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('admin-screen').classList.remove('hidden');
+                muatTabelRekap();
+            } else if(password !== null) {
+                alert("Password salah!");
+            }
+        }
+
+        window.tutupPanelAdmin = function() {
+            document.getElementById('admin-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+        }
+
+        function muatTabelRekap() {
+            const tbody = document.getElementById('tabel-rekap-body');
+            tbody.innerHTML = '';
+            let rekap = JSON.parse(localStorage.getItem('rekap_cbt_sms') || '[]');
+
+            if(rekap.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Belum ada data nilai taruna/i yang masuk.</td></tr>`;
+                return;
+            }
+
+            rekap.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="p-3">${index + 1}</td>
+                    <td class="p-3 font-medium text-slate-800">${item.nama}</td>
+                    <td class="p-3 text-slate-600">${item.nim}</td>
+                    <td class="p-3 text-center">${item.benar} / 50</td>
+                    <td class="p-3 text-center font-bold text-blue-600">${item.nilai}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.hapusDataRekap = function() {
+            if(confirm("Apakah Anda yakin ingin menghapus seluruh data rekap nilai ini?")) {
+                localStorage.removeItem('rekap_cbt_sms');
+                muatTabelRekap();
+            }
         }
     </script>
 </body>
