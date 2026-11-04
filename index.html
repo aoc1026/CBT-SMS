@@ -16,8 +16,8 @@
             <p class="text-xs text-blue-200">Ujian Sistem Manajemen Keselamatan (SMS)</p>
         </div>
         <div id="timer-box" class="bg-blue-800 px-4 py-2 rounded-lg font-mono text-lg font-semibold border border-blue-700 hidden flex items-center space-x-3">
-            <div>⏱️ Total: <span id="time-left">25:00</span></div>
-            <div class="border-l border-blue-600 pl-3 text-amber-300">⏳ Soal Ini: <span id="question-time">30</span>s</div>
+            <div>⏱️ Total: <span id="time-left">41:40</span></div>
+            <div class="border-l border-blue-600 pl-3 text-amber-300">⏳ Soal Ini: <span id="question-time">50</span>s</div>
         </div>
     </header>
 
@@ -132,7 +132,7 @@
         <!-- Halaman Hasil / Nilai (Langsung Muncul) -->
         <div id="result-screen" class="hidden bg-white p-8 rounded-xl shadow-lg max-w-lg mx-auto text-center">
             <h2 class="text-2xl font-bold text-slate-800 mb-2">Ujian Telah Selesai</h2>
-            <p class="text-slate-600 mb-6">Hasil ujian Anda berhasil direkam dan dinilai secara otomatis.</p>
+            <p class="text-slate-600 mb-6">Hasil ujian Anda berhasil direkam dan dinilai secara otomatis[cite: 206].</p>
             
             <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
                 <p class="text-sm text-blue-600 font-semibold uppercase tracking-wider mb-1">Nilai Akhir Anda</p>
@@ -167,8 +167,8 @@
         let skippedStatus = {}; 
         let totalTimerInterval;
         let questionTimerInterval;
-        let totalTimeLeft = 1500; 
-        let questionTimeLeft = 30; 
+        let totalTimeLeft = 2500; // Disesuaikan total waktu keseluruhan (50 soal x 50 detik = 2500 detik / ~41.6 menit)
+        let questionTimeLeft = 50; // Durasi per soal diubah menjadi 50 detik
 
         window.mulaiUjian = function(event) {
             event.preventDefault();
@@ -292,7 +292,7 @@
 
         function resetQuestionTimer() {
             clearInterval(questionTimerInterval);
-            questionTimeLeft = 30; 
+            questionTimeLeft = 50; // Reset ke 50 detik per soal
             document.getElementById('question-time').innerText = questionTimeLeft;
 
             questionTimerInterval = setInterval(() => {
@@ -360,7 +360,6 @@
             const nama = document.getElementById('nama-peserta').value;
             const nim = document.getElementById('nim-peserta').value;
 
-            // Simpan hasil ke LocalStorage browser supaya terekam untuk laporan dosen
             simpanHasilKeStorage(nama, nim, totalBenar, nilaiAkhir);
 
             document.getElementById('quiz-screen').classList.add('hidden');
@@ -375,7 +374,6 @@
 
         function simpanHasilKeStorage(nama, nim, benar, nilai) {
             let rekap = JSON.parse(localStorage.getItem('rekap_cbt_sms') || '[]');
-            // Cek jika NIM sudah ada, update nilainya; jika belum, tambah baru
             let existingIndex = rekap.findIndex(item => item.nim === nim);
             if(existingIndex !== -1) {
                 rekap[existingIndex] = { nama, nim, benar, nilai, tanggal: new Date().toLocaleString() };
@@ -385,10 +383,9 @@
             localStorage.setItem('rekap_cbt_sms', JSON.stringify(rekap));
         }
 
-        // Fungsi Panel Dosen (Admin)
         window.bukaPanelAdmin = function() {
             const password = prompt("Masukkan Password Dosen:");
-            if(password === "poltekbang123") { // Password default, bisa diubah sesuai keinginan Ibu
+            if(password === "poltekbang123") {
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('admin-screen').classList.remove('hidden');
                 muatTabelRekap();
