@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBT Ujian Online - Politeknik Penerbangan Makassar</title>
+    <!-- Tailwind CSS untuk Desain Modern dan Responsif -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col justify-between">
+
+    <!-- Header / Navbar -->
+    <header class="bg-blue-900 text-white shadow-md py-4 px-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-bold">CBT Politeknik Penerbangan Makassar</h1>
+            <p class="text-xs text-blue-200">Ujian Sistem Manajemen Keselamatan (SMS)</p>
+        </div>
+        <div id="timer-box" class="bg-blue-800 px-4 py-2 rounded-lg font-mono text-lg font-semibold border border-blue-700 hidden">
+            ⏱️ <span id="time-left">60:00</span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container mx-auto px-4 py-8 max-w-4xl flex-grow">
+        
+        <!-- Halaman Login / Persiapan Ujian -->
+        <div id="login-screen" class="bg-white p-8 rounded-xl shadow-lg max-w-md mx-auto mt-10">
+            <h2 class="text-2xl font-bold mb-6 text-blue-900 text-center">Konfirmasi Peserta Ujian</h2>
+            <form id="form-login" onsubmit="mulaiUjian(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
+                    <input type="text" id="nama-peserta" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Masukkan nama taruna/i">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nomor Induk Taruna / NIM</label>
+                    <input type="text" id="nim-peserta" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Masukkan NIM">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition duration-200 shadow">
+                    Mulai Ujian Sekarang
+                </button>
+            </form>
+        </div>
+
+        <!-- Halaman Pengerjaan Soal (Hidden by default) -->
+        <div id="quiz-screen" class="hidden grid grid-cols-1 md:grid-cols-4 gap-6">
+            
+            <!-- Area Soal Utama (3 Kolom) -->
+            <div class="md:col-span-3 bg-white p-6 rounded-xl shadow-lg flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center border-b pb-3 mb-4">
+                        <span id="question-number" class="text-sm font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">Soal ke-1</span>
+                        <span class="text-xs text-slate-500">Bobot: <span class="font-bold text-slate-700">2 Poin</span></span>
+                    </div>
+                    <h3 id="question-text" class="text-lg font-medium text-slate-900 mb-6">Pertanyaan akan muncul di sini...</h3>
+                    
+                    <!-- Pilihan Jawaban -->
+                    <div id="options-container" class="space-y-3">
+                        <!-- Opsi akan di-generate via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Navigasi Bawah Soal -->
+                <div class="flex justify-between items-center border-t pt-6 mt-8">
+                    <button onclick="soalSebelumnya()" id="btn-prev" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-medium transition">
+                        &larr; Sebelumnya
+                    </button>
+                    <button onclick="tandaiRagu()" id="btn-doubt" class="bg-amber-100 hover:bg-amber-200 text-amber-800 px-4 py-2 rounded-lg font-medium transition text-sm">
+                        Ragu-ragu
+                    </button>
+                    <button onclick="soalBerikutnya()" id="btn-next" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                        Selanjutnya &rarr;
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel Navigasi Nomor Soal (1 Kolom) -->
+            <div class="bg-white p-4 rounded-xl shadow-lg flex flex-col justify-between">
+                <div>
+                    <h4 class="text-sm font-bold text-slate-700 mb-3 border-b pb-2">Navigasi Nomor Soal</h4>
+                    <div id="grid-nomor" class="grid grid-cols-5 gap-2 max-h-80 overflow-y-auto p-1">
+                        <!-- Tombol nomor soal akan di-generate otomatis -->
+                    </div>
+                </div>
+                <div class="mt-6 pt-4 border-t">
+                    <button onclick="konfirmasiSelesai()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg transition text-sm shadow">
+                        Selesai Ujian
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Halaman Hasil / Nilai (Hidden by default) -->
+        <div id="result-screen" class="hidden bg-white p-8 rounded-xl shadow-lg max-w-lg mx-auto text-center">
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Ujian Telah Selesai</h2>
+            <p class="text-slate-600 mb-6">Terima kasih telah menyelesaikan Ujian Sistem Manajemen Keselamatan (SMS).</p>
+            
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
+                <p class="text-sm text-blue-600 font-semibold uppercase tracking-wider mb-1">Nilai Akhir Anda</p>
+                <p id="score-display" class="text-5xl font-extrabold text-blue-900">0</p>
+                <p class="text-xs text-slate-500 mt-2">Dari total skala 100 (Bobot 2 per soal)</p>
+            </div>
+
+            <div class="text-left text-sm text-slate-600 space-y-2 mb-6 bg-slate-50 p-4 rounded-lg">
+                <p>👤 <b>Nama:</b> <span id="res-nama">-</span></p>
+                <p>🆔 <b>NIM:</b> <span id="res-nim">-</span></p>
+                <p>✅ <b>Jawaban Benar:</b> <span id="res-benar">0</span> dari 50 soal</p>
+            </div>
+
+            <button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg transition">
+                Keluar / Ulangi Ujian
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-slate-400 text-center py-4 text-xs">
+        &copy; 2026 Politeknik Penerbangan Makassar — Computer Based Test System.
+    </footer>
+
+    <!-- JavaScript Logika CBT -->
+    <script type="module">
+        import smsBankSoal from './sms_bank_soal.js';
+
+        let currentQuestion = 0;
+        let userAnswers = {}; // Menyimpan jawaban user { indexSoal: pilihanIndex }
+        let dudaStatus = {};  // Menyimpan status ragu-ragu { indexSoal: boolean }
+        let timerInterval;
+        let timeLeft = 3600; // 60 menit dalam detik
+
+        window.mulaiUjian = function(event) {
+            event.preventDefault();
+            const nama = document.getElementById('nama-peserta').value;
+            const nim = document.getElementById('nim-peserta').value;
+
+            if(!nama || !nim) return;
+
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            document.getElementById('timer-box').classList.remove('hidden');
+
+            initNavigasiGrid();
+            loadSoal(currentQuestion);
+            startTimer();
+        }
+
+        function initNavigasiGrid() {
+            const grid = document.getElementById('grid-nomor');
+            grid.innerHTML = '';
+            smsBankSoal.forEach((_, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = index + 1;
+                btn.id = `nav-btn-${index}`;
+                btn.className = "w-9 h-9 rounded-lg font-medium text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition border border-slate-200";
+                btn.onclick = () => pindahSoal(index);
+                grid.appendChild(btn);
+            });
+            updateNavigasiGridStyles();
+        }
+
+        window.pindahSoal = function(index) {
+            currentQuestion = index;
+            loadSoal(currentQuestion);
+        }
+
+        function loadSoal(index) {
+            const soal = smsBankSoal[index];
+            document.getElementById('question-number').innerText = `Soal ke-${index + 1} dari ${smsBankSoal.length}`;
+            document.getElementById('question-text').innerText = soal.question;
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            soal.options.forEach((opt, optIndex) => {
+                const isChecked = userAnswers[index] === optIndex ? 'checked' : '';
+                const div = document.createElement('label');
+                div.className = `flex items-start p-3 border rounded-xl cursor-pointer transition hover:bg-blue-50 ${isChecked ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500' : 'border-slate-200'}`;
+                div.innerHTML = `
+                    <input type="radio" name="option" value="${optIndex}" ${isChecked} onchange="pilihJawaban(${index}, ${optIndex})" class="mt-1 mr-3 text-blue-600 focus:ring-blue-500 h-4 w-4">
+                    <span class="text-sm text-slate-700 leading-relaxed">${opt}</span>
+                `;
+                optionsContainer.appendChild(div);
+            });
+
+            // Atur tombol prev/next
+            document.getElementById('btn-prev').style.display = index === 0 ? 'none' : 'block';
+            document.getElementById('btn-next').innerText = index === smsBankSoal.length - 1 ? 'Selesai' : 'Selanjutnya →';
+            
+            updateNavigasiGridStyles();
+        }
+
+        window.pilihJawaban = function(soalIndex, optIndex) {
+            userAnswers[soalIndex] = optIndex;
+            updateNavigasiGridStyles();
+        }
+
+        window.tandaiRagu = function() {
+            dudaStatus[currentQuestion] = !dudaStatus[currentQuestion];
+            const btnDoubt = document.getElementById('btn-doubt');
+            if(dudaStatus[currentQuestion]) {
+                btnDoubt.className = "bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition text-sm shadow";
+                btnDoubt.innerText = "Ragu-ragu (Ditandai)";
+            } else {
+                btnDoubt.className = "bg-amber-100 hover:bg-amber-200 text-amber-800 px-4 py-2 rounded-lg font-medium transition text-sm";
+                btnDoubt.innerText = "Ragu-ragu";
+            }
+            updateNavigasiGridStyles();
+        }
+
+        window.soalBerikutnya = function() {
+            if(currentQuestion < smsBankSoal.length - 1) {
+                currentQuestion++;
+                loadSoal(currentQuestion);
+                resetDoubtButton();
+            } else {
+                konfirmasiSelesai();
+            }
+        }
+
+        window.soalSebelumnya = function() {
+            if(currentQuestion > 0) {
+                currentQuestion--;
+                loadSoal(currentQuestion);
+                resetDoubtButton();
+            }
+        }
+
+        function resetDoubtButton() {
+            const btnDoubt = document.getElementById('btn-doubt');
+            if(dudaStatus[currentQuestion]) {
+                btnDoubt.className = "bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition text-sm shadow";
+                btnDoubt.innerText = "Ragu-ragu (Ditandai)";
+            } else {
+                btnDoubt.className = "bg-amber-100 hover:bg-amber-200 text-amber-800 px-4 py-2 rounded-lg font-medium transition text-sm";
+                btnDoubt.innerText = "Ragu-ragu";
+            }
+        }
+
+        function updateNavigasiGridStyles() {
+            smsBankSoal.forEach((_, index) => {
+                const btn = document.getElementById(`nav-btn-${index}`);
+                if(!btn) return;
+
+                // Reset class dasar
+                btn.className = "w-9 h-9 rounded-lg font-medium text-sm flex items-center justify-center transition border ";
+
+                if(index === currentQuestion) {
+                    btn.className += "border-blue-600 bg-blue-600 text-white shadow-sm ring-2 ring-blue-300";
+                } else if(dudaStatus[index]) {
+                    btn.className += "border-amber-400 bg-amber-400 text-white";
+                } else if(userAnswers[index] !== undefined) {
+                    btn.className += "border-emerald-500 bg-emerald-500 text-white";
+                } else {
+                    btn.className += "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200";
+                }
+            });
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if(timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    alert("Waktu ujian telah habis!");
+                    hitungDanTampilkanHasil();
+                    return;
+                }
+                timeLeft--;
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                document.getElementById('time-left').innerText = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        window.konfirmasiSelesai = function() {
+            if(confirm("Apakah Anda yakin ingin mengakhiri ujian dan mengirimkan jawaban?")) {
+                clearInterval(timerInterval);
+                hitungDanTampilkanHasil();
+            }
+        }
+
+        function hitungDanTampilkanHasil() {
+            let totalBenar = 0;
+            smsBankSoal.forEach((soal, index) => {
+                if(userAnswers[index] === soal.answer) {
+                    totalBenar++;
+                }
+            });
+
+            // Perhitungan nilai dengan bobot 2 poin per soal (Total max = 100)
+            const nilaiAkhir = totalBenar * 2;
+
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('timer-box').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+
+            document.getElementById('score-display').innerText = nilaiAkhir;
+            document.getElementById('res-nama').innerText = document.getElementById('nama-peserta').value;
+            document.getElementById('res-nim').innerText = document.getElementById('nim-peserta').value;
+            document.getElementById('res-benar').innerText = totalBenar;
+        }
+    </script>
+</body>
+</html>
