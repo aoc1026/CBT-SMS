@@ -10,14 +10,24 @@
 <body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col justify-between">
 
     <!-- Header / Navbar -->
-    <header class="bg-blue-900 text-white shadow-md py-4 px-6 flex justify-between items-center">
+    <header class="bg-blue-900 text-white shadow-md py-4 px-6 flex flex-col md:flex-row justify-between items-center gap-2">
         <div>
             <h1 class="text-xl font-bold">CBT Politeknik Penerbangan Makassar</h1>
             <p class="text-xs text-blue-200">Ujian Sistem Manajemen Keselamatan (SMS)</p>
         </div>
-        <div id="timer-box" class="bg-blue-800 px-4 py-2 rounded-lg font-mono text-lg font-semibold border border-blue-700 hidden flex items-center space-x-3">
-            <div>⏱️ Total: <span id="time-left">41:40</span></div>
-            <div class="border-l border-blue-600 pl-3 text-amber-300">⏳ Soal Ini: <span id="question-time">50</span>s</div>
+        
+        <div class="flex items-center gap-4">
+            <!-- Widget Jam & Tanggal Real-Time -->
+            <div id="live-clock" class="bg-blue-950/60 px-3 py-1.5 rounded-lg text-xs font-medium border border-blue-800 text-blue-100 flex items-center gap-2">
+                <span>📅 <span id="current-date">--/--/----</span></span>
+                <span>🕒 <span id="current-time">--:--:--</span> WITA</span>
+            </div>
+
+            <!-- Timer Ujian -->
+            <div id="timer-box" class="bg-blue-800 px-3 py-1.5 rounded-lg font-mono text-sm font-semibold border border-blue-700 hidden flex items-center space-x-2">
+                <div>⏱️ Total: <span id="time-left">41:40</span></div>
+                <div class="border-l border-blue-600 pl-2 text-amber-300">⏳ Soal: <span id="question-time">50</span>s</div>
+            </div>
         </div>
     </header>
 
@@ -62,7 +72,8 @@
                             <th class="p-3">Nama Peserta</th>
                             <th class="p-3">NIM</th>
                             <th class="p-3 text-center">Benar</th>
-                            <th class="p-3 text-center">Nilai (Skala 100)</th>
+                            <th class="p-3 text-center">Nilai</th>
+                            <th class="p-3 text-center">Waktu Akses</th>
                         </tr>
                     </thead>
                     <tbody id="tabel-rekap-body">
@@ -167,8 +178,22 @@
         let skippedStatus = {}; 
         let totalTimerInterval;
         let questionTimerInterval;
-        let totalTimeLeft = 2500; // Disesuaikan total waktu keseluruhan (50 soal x 50 detik = 2500 detik / ~41.6 menit)
-        let questionTimeLeft = 50; // Durasi per soal diubah menjadi 50 detik
+        let totalTimeLeft = 2500; 
+        let questionTimeLeft = 50; 
+
+        // Fungsi Jam & Tanggal Real-Time (Zona waktu WITA)
+        function updateLiveClock() {
+            const now = new Date();
+            // Format Tanggal (DD/MM/YYYY)
+            const optionsDate = { timeZone: 'Asia/Makassar', day: '2-digit', month: '2-digit', year: 'numeric' };
+            document.getElementById('current-date').innerText = now.toLocaleDateString('id-ID', optionsDate);
+            
+            // Format Jam (HH:MM:SS)
+            const optionsTime = { timeZone: 'Asia/Makassar', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            document.getElementById('current-time').innerText = now.toLocaleTimeString('id-ID', optionsTime).replace(/\./g, ':');
+        }
+        setInterval(updateLiveClock, 1000);
+        updateLiveClock();
 
         window.mulaiUjian = function(event) {
             event.preventDefault();
@@ -292,7 +317,7 @@
 
         function resetQuestionTimer() {
             clearInterval(questionTimerInterval);
-            questionTimeLeft = 50; // Reset ke 50 detik per soal
+            questionTimeLeft = 50; 
             document.getElementById('question-time').innerText = questionTimeLeft;
 
             questionTimerInterval = setInterval(() => {
@@ -359,8 +384,9 @@
             const nilaiAkhir = totalBenar * 2;
             const nama = document.getElementById('nama-peserta').value;
             const nim = document.getElementById('nim-peserta').value;
+            const waktuSelesai = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Makassar' }) + ' WITA';
 
-            simpanHasilKeStorage(nama, nim, totalBenar, nilaiAkhir);
+            simpanHasilKeStorage(nama, nim, totalBenar, nilaiAkhir, waktuSelesai);
 
             document.getElementById('quiz-screen').classList.add('hidden');
             document.getElementById('timer-box').classList.add('hidden');
@@ -372,13 +398,13 @@
             document.getElementById('res-benar').innerText = totalBenar;
         }
 
-        function simpanHasilKeStorage(nama, nim, benar, nilai) {
+        function simpanHasilKeStorage(nama, nim, benar, nilai, tanggal) {
             let rekap = JSON.parse(localStorage.getItem('rekap_cbt_sms') || '[]');
             let existingIndex = rekap.findIndex(item => item.nim === nim);
             if(existingIndex !== -1) {
-                rekap[existingIndex] = { nama, nim, benar, nilai, tanggal: new Date().toLocaleString() };
+                rekap[existingIndex] = { nama, nim, benar, nilai, tanggal };
             } else {
-                rekap.push({ nama, nim, benar, nilai, tanggal: new Date().toLocaleString() });
+                rekap.push({ nama, nim, benar, nilai, tanggal });
             }
             localStorage.setItem('rekap_cbt_sms', JSON.stringify(rekap));
         }
@@ -405,7 +431,7 @@
             let rekap = JSON.parse(localStorage.getItem('rekap_cbt_sms') || '[]');
 
             if(rekap.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Belum ada data nilai taruna/i yang masuk.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Belum ada data nilai taruna/i yang masuk.</td></tr>`;
                 return;
             }
 
@@ -418,12 +444,13 @@
                     <td class="p-3 text-slate-600">${item.nim}</td>
                     <td class="p-3 text-center">${item.benar} / 50</td>
                     <td class="p-3 text-center font-bold text-blue-600">${item.nilai}</td>
+                    <td class="p-3 text-center text-xs text-slate-500">${item.tanggal}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        window.hapusDataRekap = function() {
+        window.hapusDataRekap = function`() {
             if(confirm("Apakah Anda yakin ingin menghapus seluruh data rekap nilai ini?")) {
                 localStorage.removeItem('rekap_cbt_sms');
                 muatTabelRekap();
