@@ -184,11 +184,9 @@
         // Fungsi Jam & Tanggal Real-Time (Zona waktu WITA)
         function updateLiveClock() {
             const now = new Date();
-            // Format Tanggal (DD/MM/YYYY)
             const optionsDate = { timeZone: 'Asia/Makassar', day: '2-digit', month: '2-digit', year: 'numeric' };
             document.getElementById('current-date').innerText = now.toLocaleDateString('id-ID', optionsDate);
             
-            // Format Jam (HH:MM:SS)
             const optionsTime = { timeZone: 'Asia/Makassar', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
             document.getElementById('current-time').innerText = now.toLocaleTimeString('id-ID', optionsTime).replace(/\./g, ':');
         }
@@ -450,7 +448,7 @@
             });
         }
 
-        window.hapusDataRekap = function`() {
+        window.hapusDataRekap = function() {
             if(confirm("Apakah Anda yakin ingin menghapus seluruh data rekap nilai ini?")) {
                 localStorage.removeItem('rekap_cbt_sms');
                 muatTabelRekap();
