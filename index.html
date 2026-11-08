@@ -83,7 +83,7 @@
             </div>
             <div class="flex justify-between items-center">
                 <button onclick="hapusDataRekap()" class="bg-rose-100 text-rose-700 hover:bg-rose-200 px-4 py-2 rounded-lg text-xs font-semibold transition">
-                    Hapus Data Rekap
+                    Hapus Data Rekap Lokal
                 </button>
                 <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition shadow">
                     🖨️ Cetak / Simpan Laporan (PDF)
@@ -143,7 +143,7 @@
         <!-- Halaman Hasil / Nilai (Langsung Muncul) -->
         <div id="result-screen" class="hidden bg-white p-8 rounded-xl shadow-lg max-w-lg mx-auto text-center">
             <h2 class="text-2xl font-bold text-slate-800 mb-2">Ujian Telah Selesai</h2>
-            <p class="text-slate-600 mb-6">Hasil ujian Anda berhasil direkam dan dinilai secara otomatis[cite: 206].</p>
+            <p class="text-slate-600 mb-6">Hasil ujian Anda berhasil direkam dan dikirim secara otomatis ke database dosen.</p>
             
             <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
                 <p class="text-sm text-blue-600 font-semibold uppercase tracking-wider mb-1">Nilai Akhir Anda</p>
@@ -384,6 +384,10 @@
             const nim = document.getElementById('nim-peserta').value;
             const waktuSelesai = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Makassar' }) + ' WITA';
 
+            // Kirim data otomatis ke Google Sheets Ibu secara terpusat
+            kirimKeGoogleSheets(nama, nim, totalBenar, nilaiAkhir, waktuSelesai);
+
+            // Simpan juga sebagai cadangan lokal di browser peserta
             simpanHasilKeStorage(nama, nim, totalBenar, nilaiAkhir, waktuSelesai);
 
             document.getElementById('quiz-screen').classList.add('hidden');
@@ -394,6 +398,16 @@
             document.getElementById('res-nama').innerText = nama;
             document.getElementById('res-nim').innerText = nim;
             document.getElementById('res-benar').innerText = totalBenar;
+        }
+
+        function kirimKeGoogleSheets(nama, nim, benar, nilai, tanggal) {
+            const scriptURL = "https://script.google.com/macros/s/AKfycbzZgnfSIcnibtyZQnE2sKKp7PadlmJ3FrgpTBk2LPJutCW9srmlKJerm3f14L1J1lWH/exec";
+            fetch(scriptURL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nama: nama, nim: nim, benar: benar, nilai: nilai, tanggal: tanggal })
+            }).catch(error => console.error('Error:', error));
         }
 
         function simpanHasilKeStorage(nama, nim, benar, nilai, tanggal) {
@@ -429,7 +443,7 @@
             let rekap = JSON.parse(localStorage.getItem('rekap_cbt_sms') || '[]');
 
             if(rekap.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Belum ada data nilai taruna/i yang masuk.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Belum ada data nilai taruna/i yang tersimpan di perangkat ini. (Data utama masuk langsung ke Google Sheets).</td></tr>`;
                 return;
             }
 
@@ -449,7 +463,7 @@
         }
 
         window.hapusDataRekap = function() {
-            if(confirm("Apakah Anda yakin ingin menghapus seluruh data rekap nilai ini?")) {
+            if(confirm("Apakah Anda yakin ingin menghapus data rekap di perangkat ini?")) {
                 localStorage.removeItem('rekap_cbt_sms');
                 muatTabelRekap();
             }
