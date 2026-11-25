@@ -212,19 +212,24 @@
                 title: "Ujian SMS",
                 subtitle: "Ujian Sistem Manajemen Keselamatan (SMS)",
                 questions: smsBankSoal,
-                defaultPoints: 2
+                defaultPoints: 2,
+                perQuestionSeconds: 50,
+                totalDurationSeconds: 2500
             },
             kereta_api: {
                 title: "Keselamatan Transportasi Darat & Perkeretaapian",
                 subtitle: "Evaluasi Keselamatan Transportasi Darat & Perkeretaapian",
                 questions: keretaApiBankSoal,
-                defaultPoints: 1
+                defaultPoints: 1,
+                perQuestionSeconds: 30,
+                totalDurationSeconds: 3000
             }
         };
 
         let activeQuestions = [];
         let activeExamTitle = "";
         let activeDefaultPoints = 2;
+        let activePerQuestionSeconds = 50;
         let currentQuestion = 0;
         let userAnswers = {};
         let skippedStatus = {};
@@ -244,11 +249,12 @@
             const pkg = examPackages[key];
             const qList = pkg?.questions || [];
             const ptsPerQ = pkg?.defaultPoints || 2;
+            const secPerQ = pkg?.perQuestionSeconds || 50;
             const count = qList.length;
-            const totalSec = count * 50;
+            const totalSec = pkg?.totalDurationSeconds || (count * secPerQ);
             const maxScore = qList.reduce((acc, q) => acc + (q.points ?? ptsPerQ), 0) || (count * ptsPerQ);
             document.getElementById('paket-info').innerText =
-                `Alokasi: 50 detik/soal (${count} soal, bobot ${ptsPerQ} poin) • Total durasi: ${formatSecondsToMMSS(totalSec)} • Skor maks: ${maxScore}`;
+                `Alokasi: ${secPerQ} detik/soal (${count} soal, bobot ${ptsPerQ} poin) • Total durasi: ${formatSecondsToMMSS(totalSec)} • Skor maks: ${maxScore}`;
         }
         updateInfoPaket();
 
@@ -280,10 +286,11 @@
             activeQuestions = selectedPkg.questions;
             activeExamTitle = selectedPkg.title;
             activeDefaultPoints = selectedPkg.defaultPoints || 2;
+            activePerQuestionSeconds = selectedPkg.perQuestionSeconds || 50;
             currentQuestion = 0;
             userAnswers = {};
             skippedStatus = {};
-            totalTimeLeft = activeQuestions.length * 50;
+            totalTimeLeft = selectedPkg.totalDurationSeconds || (activeQuestions.length * activePerQuestionSeconds);
 
             document.getElementById('header-subtitle').innerText = selectedPkg.subtitle;
             document.getElementById('time-left').innerText = formatSecondsToMMSS(totalTimeLeft);
@@ -404,7 +411,7 @@
 
         function resetQuestionTimer() {
             clearInterval(questionTimerInterval);
-            questionTimeLeft = 50; 
+            questionTimeLeft = activePerQuestionSeconds; 
             document.getElementById('question-time').innerText = questionTimeLeft;
 
             questionTimerInterval = setInterval(() => {
