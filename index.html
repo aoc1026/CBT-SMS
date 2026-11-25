@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CBT Ujian Online - Politeknik Penerbangan Makassar</title>
-    <!-- Tailwind CSS untuk Desain Modern dan Responsif -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col justify-between">
@@ -13,10 +12,10 @@
     <header class="bg-blue-900 text-white shadow-md py-4 px-6 flex flex-col md:flex-row justify-between items-center gap-2">
         <div>
             <h1 class="text-xl font-bold">CBT Politeknik Penerbangan Makassar</h1>
-            <p class="text-xs text-blue-200">Ujian Sistem Manajemen Keselamatan (SMS)</p>
+            <p id="header-subtitle" class="text-xs text-blue-200">Dashboard Ujian — Pilih Mata Uji</p>
         </div>
         
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-4 flex-wrap justify-center">
             <!-- Widget Jam & Tanggal Real-Time -->
             <div id="live-clock" class="bg-blue-950/60 px-3 py-1.5 rounded-lg text-xs font-medium border border-blue-800 text-blue-100 flex items-center gap-2">
                 <span>📅 <span id="current-date">--/--/----</span></span>
@@ -25,7 +24,7 @@
 
             <!-- Timer Ujian -->
             <div id="timer-box" class="bg-blue-800 px-3 py-1.5 rounded-lg font-mono text-sm font-semibold border border-blue-700 hidden flex items-center space-x-2">
-                <div>⏱️ Total: <span id="time-left">41:40</span></div>
+                <div>⏱️ Total: <span id="time-left">00:00</span></div>
                 <div class="border-l border-blue-600 pl-2 text-amber-300">⏳ Soal: <span id="question-time">50</span>s</div>
             </div>
         </div>
@@ -34,10 +33,23 @@
     <!-- Main Container -->
     <main class="container mx-auto px-4 py-8 max-w-4xl flex-grow">
         
-        <!-- Halaman Login / Persiapan Ujian -->
-        <div id="login-screen" class="bg-white p-8 rounded-xl shadow-lg max-w-md mx-auto mt-10">
-            <h2 class="text-2xl font-bold mb-6 text-blue-900 text-center">Konfirmasi Peserta Ujian</h2>
+        <!-- Halaman Login & Pilihan Mata Uji (1 Dashboard) -->
+        <div id="login-screen" class="bg-white p-8 rounded-xl shadow-lg max-w-lg mx-auto mt-6">
+            <h2 class="text-2xl font-bold mb-2 text-blue-900 text-center">Dashboard Ujian CBT</h2>
+            <p class="text-xs text-slate-500 text-center mb-6">Silakan lengkapi identitas dan pilih mata uji yang akan dikerjakan</p>
+            
             <form id="form-login" onsubmit="mulaiUjian(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Pilih Mata Uji</label>
+                    <select id="paket-ujian" onchange="updateInfoPaket()" class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 font-medium text-slate-800">
+                        <option value="sms">Ujian SMS (50 Soal — Bobot 2 Poin/Soal)</option>
+                        <option value="kereta_api">Keselamatan Transportasi Darat &amp; Perkeretaapian (100 Soal — Bobot 1 Poin/Soal)</option>
+                    </select>
+                    <p id="paket-info" class="text-xs text-blue-700 mt-1.5 bg-blue-50 px-3 py-1.5 rounded-md">
+                        Alokasi: 50 detik/soal • Bobot: 2 poin/soal
+                    </p>
+                </div>
+
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
                     <input type="text" id="nama-peserta" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Masukkan nama taruna/i">
@@ -50,6 +62,7 @@
                     Mulai Ujian Sekarang
                 </button>
             </form>
+
             <!-- Tombol Khusus Akses Dosen -->
             <div class="mt-6 pt-4 border-t text-center">
                 <button onclick="bukaPanelAdmin()" class="text-xs text-slate-500 hover:text-blue-600 underline">
@@ -59,10 +72,20 @@
         </div>
 
         <!-- Halaman Panel Admin / Rekap Dosen (Hidden by default) -->
-        <div id="admin-screen" class="hidden bg-white p-6 rounded-xl shadow-lg max-w-2xl mx-auto mt-6">
-            <div class="flex justify-between items-center border-b pb-4 mb-4">
-                <h3 class="text-xl font-bold text-blue-900">Rekapitulasi Hasil Ujian Taruna/i</h3>
-                <button onclick="tutupPanelAdmin()" class="text-slate-400 hover:text-slate-600 text-sm font-semibold">✕ Tutup</button>
+        <div id="admin-screen" class="hidden bg-white p-6 rounded-xl shadow-lg max-w-3xl mx-auto mt-6">
+            <div class="flex flex-wrap justify-between items-center border-b pb-4 mb-4 gap-2">
+                <div>
+                    <h3 class="text-xl font-bold text-blue-900">Rekapitulasi Hasil Ujian Taruna/i</h3>
+                    <p class="text-xs text-slate-500">Rekap lokal perangkat (Data utama otomatis terkirim ke Google Sheets)</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <select id="filter-rekap-paket" onchange="muatTabelRekap()" class="text-xs border rounded-lg px-2.5 py-1.5 bg-slate-50">
+                        <option value="all">Semua Mata Uji</option>
+                        <option value="Ujian SMS">Ujian SMS</option>
+                        <option value="Keselamatan Transportasi Darat & Perkeretaapian">Keselamatan Transportasi Darat &amp; Perkeretaapian</option>
+                    </select>
+                    <button onclick="tutupPanelAdmin()" class="text-slate-400 hover:text-slate-600 text-sm font-semibold px-2">✕ Tutup</button>
+                </div>
             </div>
             <div class="overflow-x-auto mb-6">
                 <table class="w-full text-left border-collapse text-sm">
@@ -71,14 +94,13 @@
                             <th class="p-3">No</th>
                             <th class="p-3">Nama Peserta</th>
                             <th class="p-3">NIM</th>
+                            <th class="p-3">Mata Uji</th>
                             <th class="p-3 text-center">Benar</th>
                             <th class="p-3 text-center">Nilai</th>
                             <th class="p-3 text-center">Waktu Akses</th>
                         </tr>
                     </thead>
-                    <tbody id="tabel-rekap-body">
-                        <!-- Data rekap masuk disini -->
-                    </tbody>
+                    <tbody id="tabel-rekap-body"></tbody>
                 </table>
             </div>
             <div class="flex justify-between items-center">
@@ -99,14 +121,12 @@
                 <div>
                     <div class="flex justify-between items-center border-b pb-3 mb-4">
                         <span id="question-number" class="text-sm font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">Soal ke-1</span>
-                        <span class="text-xs text-slate-500">Bobot: <span class="font-bold text-slate-700">2 Poin</span></span>
+                        <span class="text-xs text-slate-500">Bobot: <span id="question-points-label" class="font-bold text-slate-700">2 Poin</span></span>
                     </div>
                     <h3 id="question-text" class="text-lg font-medium text-slate-900 mb-6">Pertanyaan akan muncul di sini...</h3>
                     
                     <!-- Pilihan Jawaban -->
-                    <div id="options-container" class="space-y-3">
-                        <!-- Opsi akan di-generate via JavaScript -->
-                    </div>
+                    <div id="options-container" class="space-y-3"></div>
                 </div>
 
                 <!-- Navigasi Bawah Soal -->
@@ -127,9 +147,7 @@
             <div class="bg-white p-4 rounded-xl shadow-lg flex flex-col justify-between">
                 <div>
                     <h4 class="text-sm font-bold text-slate-700 mb-3 border-b pb-2">Navigasi Nomor Soal</h4>
-                    <div id="grid-nomor" class="grid grid-cols-5 gap-2 max-h-80 overflow-y-auto p-1">
-                        <!-- Tombol nomor soal akan di-generate otomatis -->
-                    </div>
+                    <div id="grid-nomor" class="grid grid-cols-5 gap-2 max-h-80 overflow-y-auto p-1"></div>
                 </div>
                 <div class="mt-6 pt-4 border-t">
                     <button onclick="konfirmasiSelesai()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg transition text-sm shadow">
@@ -148,17 +166,18 @@
             <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
                 <p class="text-sm text-blue-600 font-semibold uppercase tracking-wider mb-1">Nilai Akhir Anda</p>
                 <p id="score-display" class="text-5xl font-extrabold text-blue-900">0</p>
-                <p class="text-xs text-slate-500 mt-2">Dari total skala 100 (Bobot 2 per soal)</p>
+                <p id="score-scale-info" class="text-xs text-slate-500 mt-2">Bobot 2 poin per soal</p>
             </div>
 
             <div class="text-left text-sm text-slate-600 space-y-2 mb-6 bg-slate-50 p-4 rounded-lg">
+                <p>📚 <b>Mata Uji:</b> <span id="res-paket">-</span></p>
                 <p>👤 <b>Nama:</b> <span id="res-nama">-</span></p>
                 <p>🆔 <b>NIM:</b> <span id="res-nim">-</span></p>
-                <p>✅ <b>Jawaban Benar:</b> <span id="res-benar">0</span> dari 50 soal</p>
+                <p>✅ <b>Jawaban Benar:</b> <span id="res-benar">0</span> dari <span id="res-total-soal">0</span> soal</p>
             </div>
 
             <button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg transition">
-                Keluar / Ulangi Ujian
+                Kembali ke Dashboard
             </button>
         </div>
 
@@ -171,15 +190,67 @@
 
     <!-- JavaScript Logika CBT -->
     <script type="module">
-        import smsBankSoal from './sms_bank_soal.js';
+        let smsBankSoal = [];
+        let keretaApiBankSoal = [];
 
+        try {
+            const smsMod = await import('./sms_bank_soal.js');
+            smsBankSoal = smsMod.default || [];
+        } catch (err) {
+            console.warn("sms_bank_soal.js belum dimuat:", err);
+        }
+
+        try {
+            const kaMod = await import('./kereta_api_bank_soal.js');
+            keretaApiBankSoal = kaMod.default || [];
+        } catch (err) {
+            console.warn("kereta_api_bank_soal.js belum dimuat:", err);
+        }
+
+        const examPackages = {
+            sms: {
+                title: "Ujian SMS",
+                subtitle: "Ujian Sistem Manajemen Keselamatan (SMS)",
+                questions: smsBankSoal,
+                defaultPoints: 2
+            },
+            kereta_api: {
+                title: "Keselamatan Transportasi Darat & Perkeretaapian",
+                subtitle: "Evaluasi Keselamatan Transportasi Darat & Perkeretaapian",
+                questions: keretaApiBankSoal,
+                defaultPoints: 1
+            }
+        };
+
+        let activeQuestions = [];
+        let activeExamTitle = "";
+        let activeDefaultPoints = 2;
         let currentQuestion = 0;
-        let userAnswers = {}; 
-        let skippedStatus = {}; 
+        let userAnswers = {};
+        let skippedStatus = {};
         let totalTimerInterval;
         let questionTimerInterval;
-        let totalTimeLeft = 2500; 
-        let questionTimeLeft = 50; 
+        let totalTimeLeft = 0;
+        let questionTimeLeft = 50;
+
+        function formatSecondsToMMSS(sec) {
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        window.updateInfoPaket = function() {
+            const key = document.getElementById('paket-ujian').value;
+            const pkg = examPackages[key];
+            const qList = pkg?.questions || [];
+            const ptsPerQ = pkg?.defaultPoints || 2;
+            const count = qList.length;
+            const totalSec = count * 50;
+            const maxScore = qList.reduce((acc, q) => acc + (q.points ?? ptsPerQ), 0) || (count * ptsPerQ);
+            document.getElementById('paket-info').innerText =
+                `Alokasi: 50 detik/soal (${count} soal, bobot ${ptsPerQ} poin) • Total durasi: ${formatSecondsToMMSS(totalSec)} • Skor maks: ${maxScore}`;
+        }
+        updateInfoPaket();
 
         // Fungsi Jam & Tanggal Real-Time (Zona waktu WITA)
         function updateLiveClock() {
@@ -195,11 +266,27 @@
 
         window.mulaiUjian = function(event) {
             event.preventDefault();
-            const nama = document.getElementById('nama-peserta').value;
-            const nim = document.getElementById('nim-peserta').value;
+            const nama = document.getElementById('nama-peserta').value.trim();
+            const nim = document.getElementById('nim-peserta').value.trim();
+            const paketKey = document.getElementById('paket-ujian').value;
+            const selectedPkg = examPackages[paketKey];
 
-            if(!nama || !nim) return;
+            if (!nama || !nim || !selectedPkg) return;
+            if (!selectedPkg.questions || selectedPkg.questions.length === 0) {
+                alert("File bank soal untuk mata uji ini belum ditemukan. Pastikan file JS bank soal sudah diunggah ke repositori.");
+                return;
+            }
 
+            activeQuestions = selectedPkg.questions;
+            activeExamTitle = selectedPkg.title;
+            activeDefaultPoints = selectedPkg.defaultPoints || 2;
+            currentQuestion = 0;
+            userAnswers = {};
+            skippedStatus = {};
+            totalTimeLeft = activeQuestions.length * 50;
+
+            document.getElementById('header-subtitle').innerText = selectedPkg.subtitle;
+            document.getElementById('time-left').innerText = formatSecondsToMMSS(totalTimeLeft);
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('quiz-screen').classList.remove('hidden');
             document.getElementById('timer-box').classList.remove('hidden');
@@ -212,7 +299,7 @@
         function initNavigasiGrid() {
             const grid = document.getElementById('grid-nomor');
             grid.innerHTML = '';
-            smsBankSoal.forEach((_, index) => {
+            activeQuestions.forEach((_, index) => {
                 const btn = document.createElement('button');
                 btn.innerText = index + 1;
                 btn.id = `nav-btn-${index}`;
@@ -230,8 +317,10 @@
 
         function loadSoal(index) {
             currentQuestion = index;
-            const soal = smsBankSoal[index];
-            document.getElementById('question-number').innerText = `Soal ke-${index + 1} dari ${smsBankSoal.length}`;
+            const soal = activeQuestions[index];
+            const pts = soal.points ?? activeDefaultPoints;
+            document.getElementById('question-number').innerText = `Soal ke-${index + 1} dari ${activeQuestions.length}`;
+            document.getElementById('question-points-label').innerText = `${pts} Poin`;
             document.getElementById('question-text').innerText = soal.question;
 
             const optionsContainer = document.getElementById('options-container');
@@ -249,7 +338,7 @@
             });
 
             document.getElementById('btn-prev').style.display = index === 0 ? 'none' : 'block';
-            document.getElementById('btn-next').innerText = index === smsBankSoal.length - 1 ? 'Selesai' : 'Selanjutnya →';
+            document.getElementById('btn-next').innerText = index === activeQuestions.length - 1 ? 'Selesai' : 'Selanjutnya →';
             
             updateNavigasiGridStyles();
             resetQuestionTimer();
@@ -265,12 +354,12 @@
             skippedStatus[currentQuestion] = true;
             updateNavigasiGridStyles();
             
-            if(currentQuestion < smsBankSoal.length - 1) {
+            if (currentQuestion < activeQuestions.length - 1) {
                 currentQuestion++;
                 loadSoal(currentQuestion);
             } else {
-                let nextUnanswered = smsBankSoal.findIndex((_, idx) => userAnswers[idx] === undefined);
-                if(nextUnanswered !== -1) {
+                let nextUnanswered = activeQuestions.findIndex((_, idx) => userAnswers[idx] === undefined);
+                if (nextUnanswered !== -1) {
                     loadSoal(nextUnanswered);
                 } else {
                     konfirmasiSelesai();
@@ -279,7 +368,7 @@
         }
 
         window.soalBerikutnya = function() {
-            if(currentQuestion < smsBankSoal.length - 1) {
+            if (currentQuestion < activeQuestions.length - 1) {
                 currentQuestion++;
                 loadSoal(currentQuestion);
             } else {
@@ -288,24 +377,24 @@
         }
 
         window.soalSebelumnya = function() {
-            if(currentQuestion > 0) {
+            if (currentQuestion > 0) {
                 currentQuestion--;
                 loadSoal(currentQuestion);
             }
         }
 
         function updateNavigasiGridStyles() {
-            smsBankSoal.forEach((_, index) => {
+            activeQuestions.forEach((_, index) => {
                 const btn = document.getElementById(`nav-btn-${index}`);
-                if(!btn) return;
+                if (!btn) return;
 
                 btn.className = "w-9 h-9 rounded-lg font-medium text-sm flex items-center justify-center transition border ";
 
-                if(index === currentQuestion) {
+                if (index === currentQuestion) {
                     btn.className += "border-blue-600 bg-blue-600 text-white shadow-sm ring-2 ring-blue-300";
-                } else if(skippedStatus[index]) {
+                } else if (skippedStatus[index]) {
                     btn.className += "border-amber-400 bg-amber-400 text-white"; 
-                } else if(userAnswers[index] !== undefined) {
+                } else if (userAnswers[index] !== undefined) {
                     btn.className += "border-emerald-500 bg-emerald-500 text-white"; 
                 } else {
                     btn.className += "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200";
@@ -322,18 +411,18 @@
                 questionTimeLeft--;
                 document.getElementById('question-time').innerText = questionTimeLeft;
 
-                if(questionTimeLeft <= 0) {
+                if (questionTimeLeft <= 0) {
                     clearInterval(questionTimerInterval);
-                    if(userAnswers[currentQuestion] === undefined) {
+                    if (userAnswers[currentQuestion] === undefined) {
                         skippedStatus[currentQuestion] = true;
                     }
                     
-                    if(currentQuestion < smsBankSoal.length - 1) {
+                    if (currentQuestion < activeQuestions.length - 1) {
                         currentQuestion++;
                         loadSoal(currentQuestion);
                     } else {
-                        let nextUnanswered = smsBankSoal.findIndex((_, idx) => userAnswers[idx] === undefined);
-                        if(nextUnanswered !== -1) {
+                        let nextUnanswered = activeQuestions.findIndex((_, idx) => userAnswers[idx] === undefined);
+                        if (nextUnanswered !== -1) {
                             loadSoal(nextUnanswered);
                         } else {
                             hitungDanTampilkanHasil();
@@ -345,7 +434,7 @@
 
         function startTotalTimer() {
             totalTimerInterval = setInterval(() => {
-                if(totalTimeLeft <= 0) {
+                if (totalTimeLeft <= 0) {
                     clearInterval(totalTimerInterval);
                     clearInterval(questionTimerInterval);
                     alert("Waktu total ujian telah habis!");
@@ -353,15 +442,12 @@
                     return;
                 }
                 totalTimeLeft--;
-                const minutes = Math.floor(totalTimeLeft / 60);
-                const seconds = totalTimeLeft % 60;
-                document.getElementById('time-left').innerText = 
-                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                document.getElementById('time-left').innerText = formatSecondsToMMSS(totalTimeLeft);
             }, 1000);
         }
 
         window.konfirmasiSelesai = function() {
-            if(confirm("Apakah Anda yakin ingin mengakhiri ujian dan mengirimkan jawaban?")) {
+            if (confirm("Apakah Anda yakin ingin mengakhiri ujian dan mengirimkan jawaban?")) {
                 clearInterval(totalTimerInterval);
                 clearInterval(questionTimerInterval);
                 hitungDanTampilkanHasil();
@@ -373,61 +459,66 @@
             clearInterval(questionTimerInterval);
             
             let totalBenar = 0;
-            smsBankSoal.forEach((soal, index) => {
-                if(userAnswers[index] === soal.answer) {
+            let nilaiAkhir = 0;
+            let skorMaks = 0;
+            activeQuestions.forEach((soal, index) => {
+                const pts = soal.points ?? activeDefaultPoints;
+                skorMaks += pts;
+                if (userAnswers[index] === soal.answer) {
                     totalBenar++;
+                    nilaiAkhir += pts;
                 }
             });
-
-            const nilaiAkhir = totalBenar * 2;
             const nama = document.getElementById('nama-peserta').value;
             const nim = document.getElementById('nim-peserta').value;
             const waktuSelesai = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Makassar' }) + ' WITA';
 
-            // Kirim data otomatis ke Google Sheets Ibu secara terpusat
-            kirimKeGoogleSheets(nama, nim, totalBenar, nilaiAkhir, waktuSelesai);
-
-            // Simpan juga sebagai cadangan lokal di browser peserta
-            simpanHasilKeStorage(nama, nim, totalBenar, nilaiAkhir, waktuSelesai);
+            kirimKeGoogleSheets(nama, nim, activeExamTitle, totalBenar, nilaiAkhir, waktuSelesai);
+            simpanHasilKeStorage(nama, nim, activeExamTitle, totalBenar, nilaiAkhir, waktuSelesai);
 
             document.getElementById('quiz-screen').classList.add('hidden');
             document.getElementById('timer-box').classList.add('hidden');
             document.getElementById('result-screen').classList.remove('hidden');
 
             document.getElementById('score-display').innerText = nilaiAkhir;
+            document.getElementById('score-scale-info').innerText = `Bobot ${activeDefaultPoints} poin per soal (Skor maksimal ${skorMaks})`;
+            document.getElementById('res-paket').innerText = activeExamTitle;
             document.getElementById('res-nama').innerText = nama;
             document.getElementById('res-nim').innerText = nim;
             document.getElementById('res-benar').innerText = totalBenar;
+            document.getElementById('res-total-soal').innerText = activeQuestions.length;
         }
 
-        function kirimKeGoogleSheets(nama, nim, benar, nilai, tanggal) {
+        function kirimKeGoogleSheets(nama, nim, mataUji, benar, nilai, tanggal) {
             const scriptURL = "https://script.google.com/macros/s/AKfycbzZgnfSIcnibtyZQnE2sKKp7PadlmJ3FrgpTBk2LPJutCW9srmlKJerm3f14L1J1lWH/exec";
             fetch(scriptURL, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nama: nama, nim: nim, benar: benar, nilai: nilai, tanggal: tanggal })
+                body: JSON.stringify({
+                    nama: nama,
+                    nim: nim,
+                    mata_uji: mataUji,
+                    benar: benar,
+                    nilai: nilai,
+                    tanggal: tanggal
+                })
             }).catch(error => console.error('Error:', error));
         }
 
-        function simpanHasilKeStorage(nama, nim, benar, nilai, tanggal) {
-            let rekap = JSON.parse(localStorage.getItem('rekap_cbt_sms') || '[]');
-            let existingIndex = rekap.findIndex(item => item.nim === nim);
-            if(existingIndex !== -1) {
-                rekap[existingIndex] = { nama, nim, benar, nilai, tanggal };
-            } else {
-                rekap.push({ nama, nim, benar, nilai, tanggal });
-            }
-            localStorage.setItem('rekap_cbt_sms', JSON.stringify(rekap));
+        function simpanHasilKeStorage(nama, nim, mataUji, benar, nilai, tanggal) {
+            let rekap = JSON.parse(localStorage.getItem('rekap_cbt_poltekbang') || '[]');
+            rekap.push({ nama, nim, mataUji, benar, nilai, tanggal });
+            localStorage.setItem('rekap_cbt_poltekbang', JSON.stringify(rekap));
         }
 
         window.bukaPanelAdmin = function() {
             const password = prompt("Masukkan Password Dosen:");
-            if(password === "poltekbang123") {
+            if (password === "poltekbang123") {
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('admin-screen').classList.remove('hidden');
                 muatTabelRekap();
-            } else if(password !== null) {
+            } else if (password !== null) {
                 alert("Password salah!");
             }
         }
@@ -437,13 +528,18 @@
             document.getElementById('login-screen').classList.remove('hidden');
         }
 
-        function muatTabelRekap() {
+        window.muatTabelRekap = function() {
             const tbody = document.getElementById('tabel-rekap-body');
+            const filterVal = document.getElementById('filter-rekap-paket').value;
             tbody.innerHTML = '';
-            let rekap = JSON.parse(localStorage.getItem('rekap_cbt_sms') || '[]');
 
-            if(rekap.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Belum ada data nilai taruna/i yang tersimpan di perangkat ini. (Data utama masuk langsung ke Google Sheets).</td></tr>`;
+            let rekap = JSON.parse(localStorage.getItem('rekap_cbt_poltekbang') || '[]');
+            if (filterVal !== 'all') {
+                rekap = rekap.filter(item => item.mataUji === filterVal);
+            }
+
+            if (rekap.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Belum ada data nilai tersimpan di perangkat ini (Data utama masuk langsung ke Google Sheets).</td></tr>`;
                 return;
             }
 
@@ -454,7 +550,8 @@
                     <td class="p-3">${index + 1}</td>
                     <td class="p-3 font-medium text-slate-800">${item.nama}</td>
                     <td class="p-3 text-slate-600">${item.nim}</td>
-                    <td class="p-3 text-center">${item.benar} / 50</td>
+                    <td class="p-3 text-xs font-semibold text-blue-800">${item.mataUji || 'Ujian SMS'}</td>
+                    <td class="p-3 text-center">${item.benar}</td>
                     <td class="p-3 text-center font-bold text-blue-600">${item.nilai}</td>
                     <td class="p-3 text-center text-xs text-slate-500">${item.tanggal}</td>
                 `;
@@ -463,8 +560,8 @@
         }
 
         window.hapusDataRekap = function() {
-            if(confirm("Apakah Anda yakin ingin menghapus data rekap di perangkat ini?")) {
-                localStorage.removeItem('rekap_cbt_sms');
+            if (confirm("Apakah Anda yakin ingin menghapus seluruh data rekap lokal ini?")) {
+                localStorage.removeItem('rekap_cbt_poltekbang');
                 muatTabelRekap();
             }
         }
